@@ -15,13 +15,7 @@ import (
 func main() {
 	loadEnv()
 	githubToken := os.Getenv("GITHUB_TOKEN")
-
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: githubToken},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	client := github.NewClient(tc)
+	client, ctx := initClient(githubToken)
 
 	notifs, resp, err := client.Activity.ListNotifications(ctx, &github.NotificationListOptions{
 		All: true,
@@ -31,10 +25,12 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("hello dinggo: %s\n", resp.Status)
+	if resp.StatusCode != 200 {
+		panic(resp.Status)
+	}
 
 	for _, notif := range notifs {
-		fmt.Println(notif.Subject.GetTitle())
+		fmt.Printf("%s | %s\n", notif.Repository.GetName(), notif.GetSubject().GetTitle())
 	}
 }
 
@@ -43,4 +39,15 @@ func loadEnv() {
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
+}
+
+func initClient(githubToken string) (client *github.Client, ctx context.Context) {
+	ctx = context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: githubToken},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client = github.NewClient(tc)
+
+	return client, ctx
 }
