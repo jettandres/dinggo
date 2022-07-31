@@ -17,9 +17,7 @@ func main() {
 	githubToken := os.Getenv("GITHUB_TOKEN")
 	client, ctx := initClient(githubToken)
 
-	notifs, resp, err := client.Activity.ListNotifications(ctx, &github.NotificationListOptions{
-		All: true,
-	})
+	notifs, resp, err := client.Activity.ListNotifications(ctx, &github.NotificationListOptions{})
 
 	if err != nil {
 		panic(err)
@@ -29,9 +27,14 @@ func main() {
 		panic(resp.Status)
 	}
 
-	for _, notif := range notifs {
-		fmt.Printf("%s | %s\n", notif.Repository.GetName(), notif.GetSubject().GetTitle())
+	count := len(notifs)
+	suffix := "notif"
+
+	if count > 1 {
+		suffix = "notifs"
 	}
+
+	fmt.Printf("%d new %s\n", count, suffix)
 }
 
 func loadEnv() {
